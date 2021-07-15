@@ -11,6 +11,8 @@ pub fn query_config<S: Storage, A: Api, Q: Querier>(
         owner_addr: deps.api.human_address(&state.owner_addr)?,
         operator_addr: deps.api.human_address(&state.operator_addr)?,
         treasury_addr: deps.api.human_address(&state.treasury_addr)?,
+        bet_asset: state.bet_asset.to_normal(deps)?,
+        oracle_addr: deps.api.human_address(&state.oracle_addr)?,
         fee_rate: state.fee_rate,
         interval: state.interval,
     };

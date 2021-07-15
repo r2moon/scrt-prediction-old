@@ -11,6 +11,7 @@ pub fn update_config<S: Storage, A: Api, Q: Querier>(
     owner_addr: Option<HumanAddr>,
     operator_addr: Option<HumanAddr>,
     treasury_addr: Option<HumanAddr>,
+    oracle_addr: Option<HumanAddr>,
     fee_rate: Option<Decimal>,
     interval: Option<u64>,
 ) -> HandleResult {
@@ -31,6 +32,10 @@ pub fn update_config<S: Storage, A: Api, Q: Querier>(
 
     if let Some(treasury_addr) = treasury_addr {
         config.treasury_addr = deps.api.canonical_address(&treasury_addr)?;
+    }
+
+    if let Some(oracle_addr) = oracle_addr {
+        config.oracle_addr = deps.api.canonical_address(&oracle_addr)?;
     }
 
     if let Some(fee_rate) = fee_rate {

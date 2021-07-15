@@ -1,5 +1,7 @@
 pub mod contract;
+mod handler;
 mod manage;
+mod msg;
 mod query;
 mod state;
 

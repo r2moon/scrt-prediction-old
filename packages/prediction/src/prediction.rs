@@ -1,7 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Decimal, HumanAddr, Uint128};
+use crate::asset::AssetInfo;
+use cosmwasm_std::{Binary, Decimal, HumanAddr, Uint128};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InitMsg {
@@ -9,6 +10,10 @@ pub struct InitMsg {
     pub operator_addr: HumanAddr,
     /// Treasury address
     pub treasury_addr: HumanAddr,
+    /// Asset to bet
+    pub bet_asset: AssetInfo,
+    /// Price oracle address
+    pub oracle_addr: HumanAddr,
     /// Fee rate
     pub fee_rate: Decimal,
     /// Interval of each round in seconds
@@ -18,11 +23,17 @@ pub struct InitMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum HandleMsg {
+    Receive {
+        from: HumanAddr,
+        msg: Option<Binary>,
+        amount: Uint128,
+    },
     /// Update configuration
     UpdateConfig {
         owner_addr: Option<HumanAddr>,
         operator_addr: Option<HumanAddr>,
         treasury_addr: Option<HumanAddr>,
+        oracle_addr: Option<HumanAddr>,
         fee_rate: Option<Decimal>,
         interval: Option<u64>,
     },
@@ -45,13 +56,8 @@ pub struct ConfigResponse {
     pub owner_addr: HumanAddr,
     pub operator_addr: HumanAddr,
     pub treasury_addr: HumanAddr,
+    pub bet_asset: AssetInfo,
+    pub oracle_addr: HumanAddr,
     pub fee_rate: Decimal,
     pub interval: u64,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum AssetInfo {
-    Token { contract_addr: HumanAddr },
-    NativeToken { denom: String },
 }
