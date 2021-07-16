@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 
 use crate::handler::{bet, claim};
-use crate::manage::{finish, update_config, withdraw};
+use crate::manage::{execute_round, update_config, withdraw};
 use crate::msg::Cw20HookMsg;
 use crate::query::query_config;
 use crate::state::{store_config, store_state, Config, State};
@@ -64,7 +64,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
         ),
         HandleMsg::Claim { epoch } => claim(deps, env, epoch),
         HandleMsg::Withdraw {} => withdraw(deps, env),
-        HandleMsg::Finish {} => finish(deps, env),
+        HandleMsg::ExecuteRound {} => execute_round(deps, env),
     }
 }
 

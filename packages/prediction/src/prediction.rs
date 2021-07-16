@@ -40,7 +40,7 @@ pub enum HandleMsg {
     /// Claim winner reward
     Claim { epoch: Uint128 },
     /// Finish ongoing round, lock betting round and start new round
-    Finish {},
+    ExecuteRound {},
     /// Withdraw performance fee to treasury
     Withdraw {},
 }
