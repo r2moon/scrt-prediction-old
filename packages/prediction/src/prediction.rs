@@ -18,6 +18,8 @@ pub struct InitMsg {
     pub fee_rate: Decimal,
     /// Interval of each round in seconds
     pub interval: u64,
+    /// Grace interval to execute round
+    pub grace_interval: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -36,6 +38,7 @@ pub enum HandleMsg {
         oracle_addr: Option<HumanAddr>,
         fee_rate: Option<Decimal>,
         interval: Option<u64>,
+        grace_interval: Option<u64>,
     },
     /// Claim winner reward
     Claim { epoch: Uint128 },
@@ -43,6 +46,10 @@ pub enum HandleMsg {
     ExecuteRound {},
     /// Withdraw performance fee to treasury
     Withdraw {},
+    /// Pause
+    Pause {},
+    /// Start genesis round
+    StartGenesisRound {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -66,4 +73,5 @@ pub struct ConfigResponse {
     pub oracle_addr: HumanAddr,
     pub fee_rate: Decimal,
     pub interval: u64,
+    pub grace_interval: u64,
 }

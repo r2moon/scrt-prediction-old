@@ -17,6 +17,7 @@ pub fn update_config<S: Storage, A: Api, Q: Querier>(
     oracle_addr: Option<HumanAddr>,
     fee_rate: Option<Decimal>,
     interval: Option<u64>,
+    grace_interval: Option<u64>,
 ) -> HandleResult {
     let mut config: Config = read_config(&deps.storage)?;
 
@@ -42,11 +43,21 @@ pub fn update_config<S: Storage, A: Api, Q: Querier>(
     }
 
     if let Some(fee_rate) = fee_rate {
+        if fee_rate > Decimal::one() {
+            return Err(StdError::generic_err("Invalid fee rate"));
+        }
         config.fee_rate = fee_rate;
     }
 
     if let Some(interval) = interval {
         config.interval = interval;
+    }
+
+    if let Some(grace_interval) = grace_interval {
+        if grace_interval > config.interval {
+            return Err(StdError::generic_err("Invalid grace interval"));
+        }
+        config.grace_interval = grace_interval;
     }
 
     store_config(&mut deps.storage, &config)?;
@@ -70,19 +81,30 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
     }
 
     let mut state: State = read_state(&deps.storage)?;
-    if state.epoch < Uint128(1) {
-        return Err(StdError::generic_err("Game is not initialized"));
+    if state.paused {
+        return Err(StdError::generic_err("Paused"));
     }
     let progressing_epoch = (state.epoch - Uint128(1))?;
     let betting_epoch = state.epoch;
     let mut round: Round = read_round(&deps.storage, progressing_epoch)?;
 
-    if round.end_time > env.block.time {
-        return Err(StdError::generic_err("Round is not ended"));
+    if round.expired(env.clone(), config.grace_interval) {
+        state.paused = true;
+        store_state(&mut deps.storage, &state)?;
+
+        return Ok(HandleResponse {
+            messages: vec![],
+            log: vec![
+                log("action", "execute"),
+                log("epoch", progressing_epoch),
+                log("status", "expired"),
+            ],
+            data: None,
+        });
     }
 
-    if round.close_price.is_some() {
-        return Err(StdError::generic_err("Already closed"));
+    if !round.executable(env.clone(), config.grace_interval) {
+        return Err(StdError::generic_err("Cannot execute"));
     }
 
     // TODO fetch price from band protocol
@@ -107,8 +129,6 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
             }
 
             state.total_fee = state.total_fee + fee;
-        } else {
-            // DRAW
         }
 
         // Store result of round
@@ -134,6 +154,7 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
             reward_amount: Uint128(0),
             up_amount: Uint128(0),
             down_amount: Uint128(0),
+            is_genesis: false,
         };
 
         // Start new round
@@ -179,6 +200,95 @@ pub fn withdraw<S: Storage, A: Api, Q: Querier>(
     Ok(HandleResponse {
         messages: vec![],
         log: vec![log("action", "withdraw"), log("amount", total_fee)],
+        data: None,
+    })
+}
+
+pub fn pause<S: Storage, A: Api, Q: Querier>(deps: &mut Extern<S, A, Q>, env: Env) -> HandleResult {
+    let config: Config = read_config(&deps.storage)?;
+
+    // permission check
+    if deps.api.canonical_address(&env.message.sender)? != config.owner_addr {
+        return Err(StdError::unauthorized());
+    }
+
+    let mut state: State = read_state(&deps.storage)?;
+    if state.paused {
+        return Err(StdError::generic_err("Paused"));
+    }
+
+    state.paused = true;
+
+    store_state(&mut deps.storage, &state)?;
+
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![log("action", "pause")],
+        data: None,
+    })
+}
+
+pub fn start_genesis_round<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+) -> HandleResult {
+    let config: Config = read_config(&deps.storage)?;
+
+    // permission check
+    if deps.api.canonical_address(&env.message.sender)? != config.owner_addr {
+        return Err(StdError::unauthorized());
+    }
+
+    let mut state: State = read_state(&deps.storage)?;
+    if !state.paused {
+        return Err(StdError::generic_err("Running now"));
+    }
+
+    let epoch = state.epoch + Uint128(1);
+
+    let open_price = Uint128(0);
+    // Start genesis round
+    store_round(
+        &mut deps.storage,
+        epoch,
+        &Round {
+            start_time: env.block.time - config.interval,
+            lock_time: env.block.time,
+            end_time: env.block.time + config.interval,
+            open_price: Some(open_price),
+            close_price: None,
+            total_amount: Uint128(0),
+            reward_amount: Uint128(0),
+            up_amount: Uint128(0),
+            down_amount: Uint128(0),
+            is_genesis: true,
+        },
+    )?;
+
+    store_round(
+        &mut deps.storage,
+        epoch + Uint128(1),
+        &Round {
+            start_time: env.block.time,
+            lock_time: env.block.time + config.interval,
+            end_time: env.block.time + config.interval * 2,
+            open_price: None,
+            close_price: None,
+            total_amount: Uint128(0),
+            reward_amount: Uint128(0),
+            up_amount: Uint128(0),
+            down_amount: Uint128(0),
+            is_genesis: false,
+        },
+    )?;
+
+    state.paused = false;
+    state.epoch = state.epoch + Uint128(2);
+    store_state(&mut deps.storage, &state)?;
+
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![log("action", "pause")],
         data: None,
     })
 }

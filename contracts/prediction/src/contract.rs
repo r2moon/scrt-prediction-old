@@ -1,10 +1,10 @@
 use cosmwasm_std::{
-    from_binary, to_binary, Api, Binary, Env, Extern, HandleResult, HumanAddr, InitResponse,
-    Querier, StdError, StdResult, Storage, Uint128,
+    from_binary, to_binary, Api, Binary, Decimal, Env, Extern, HandleResult, HumanAddr,
+    InitResponse, Querier, StdError, StdResult, Storage, Uint128,
 };
 
 use crate::handler::{bet, claim};
-use crate::manage::{execute_round, update_config, withdraw};
+use crate::manage::{execute_round, pause, start_genesis_round, update_config, withdraw};
 use crate::msg::Cw20HookMsg;
 use crate::query::query_config;
 use crate::state::{store_config, store_state, Config, State};
@@ -15,6 +15,14 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     env: Env,
     msg: InitMsg,
 ) -> StdResult<InitResponse> {
+    if msg.fee_rate > Decimal::one() {
+        return Err(StdError::generic_err("Invalid fee rate"));
+    }
+
+    if msg.grace_interval > msg.interval {
+        return Err(StdError::generic_err("Invalid grace interval"));
+    }
+
     let config = Config {
         owner_addr: deps.api.canonical_address(&env.message.sender)?,
         operator_addr: deps.api.canonical_address(&msg.operator_addr)?,
@@ -23,6 +31,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         oracle_addr: deps.api.canonical_address(&msg.oracle_addr)?,
         fee_rate: msg.fee_rate,
         interval: msg.interval,
+        grace_interval: msg.grace_interval,
     };
 
     store_config(&mut deps.storage, &config)?;
@@ -32,6 +41,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         &State {
             epoch: Uint128(0),
             total_fee: Uint128(0),
+            paused: true,
         },
     )?;
 
@@ -52,6 +62,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
             oracle_addr,
             fee_rate,
             interval,
+            grace_interval,
         } => update_config(
             deps,
             env,
@@ -61,10 +72,13 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
             oracle_addr,
             fee_rate,
             interval,
+            grace_interval,
         ),
         HandleMsg::Claim { epoch } => claim(deps, env, epoch),
         HandleMsg::Withdraw {} => withdraw(deps, env),
         HandleMsg::ExecuteRound {} => execute_round(deps, env),
+        HandleMsg::Pause {} => pause(deps, env),
+        HandleMsg::StartGenesisRound {} => start_genesis_round(deps, env),
     }
 }
 

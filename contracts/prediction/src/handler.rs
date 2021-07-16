@@ -1,10 +1,11 @@
 use cosmwasm_std::{
-    log, Api, Decimal, Env, Extern, HandleResponse, HandleResult, HumanAddr, Querier, StdError,
-    Storage, Uint128,
+    log, Api, Env, Extern, HandleResponse, HandleResult, HumanAddr, Querier, StdError, Storage,
+    Uint128,
 };
 
 use crate::state::{
-    read_bet, read_round, read_state, store_bet, store_round, Bet, Position, Round, State,
+    read_bet, read_config, read_round, read_state, store_bet, store_round, Bet, Config, Position,
+    Round, State,
 };
 
 pub fn bet<S: Storage, A: Api, Q: Querier>(
@@ -17,12 +18,8 @@ pub fn bet<S: Storage, A: Api, Q: Querier>(
     let state: State = read_state(&deps.storage)?;
     let mut round: Round = read_round(&deps.storage, state.epoch)?;
 
-    if round.start_time > env.block.time {
-        return Err(StdError::generic_err("Round not started"));
-    }
-
-    if round.lock_time <= env.block.time {
-        return Err(StdError::generic_err("Round locked"));
+    if round.bettable(env) == false {
+        return Err(StdError::generic_err("Cannot bet"));
     }
 
     let user_bet = read_bet(
@@ -70,69 +67,44 @@ pub fn claim<S: Storage, A: Api, Q: Querier>(
     env: Env,
     epoch: Uint128,
 ) -> HandleResult {
+    let config: Config = read_config(&deps.storage)?;
     let round: Round = read_round(&deps.storage, epoch)?;
 
-    if round.end_time > env.block.time {
-        return Err(StdError::generic_err("Round is not ended"));
+    if !round.claimable(env.clone()) && !round.refundable(env.clone(), config.grace_interval) {
+        return Err(StdError::generic_err("Round is not closed"));
     }
 
-    if let Some(open_price) = round.open_price {
-        if let Some(close_price) = round.close_price {
-            let win_position = if close_price > open_price {
-                Position::UP
-            } else if close_price < open_price {
-                Position::DOWN
-            } else {
-                Position::DRAW
-            };
+    let mut user_bet = read_bet(
+        &deps.storage,
+        epoch,
+        deps.api.canonical_address(&env.message.sender)?,
+    )?;
 
-            let mut user_bet = read_bet(
-                &deps.storage,
-                epoch,
-                deps.api.canonical_address(&env.message.sender)?,
-            )?;
-            let total_win_amount = if win_position == Position::UP {
-                round.up_amount
-            } else if win_position == Position::DOWN {
-                round.down_amount
-            } else {
-                Uint128(0)
-            };
-
-            if user_bet.claimed {
-                return Err(StdError::generic_err("Already claimed"));
-            }
-            if user_bet.position == win_position || win_position == Position::DRAW {
-                user_bet.claimed = true;
-                store_bet(
-                    &mut deps.storage,
-                    epoch,
-                    deps.api.canonical_address(&env.message.sender)?,
-                    &user_bet,
-                )?;
-
-                let claim_amount = if win_position == Position::DRAW {
-                    user_bet.amount
-                } else {
-                    round.reward_amount * Decimal::from_ratio(user_bet.amount, total_win_amount)
-                };
-
-                Ok(HandleResponse {
-                    messages: vec![],
-                    log: vec![
-                        log("action", "claim"),
-                        log("epoch", epoch),
-                        log("amount", claim_amount),
-                    ],
-                    data: None,
-                })
-            } else {
-                return Err(StdError::generic_err("You lose"));
-            }
-        } else {
-            return Err(StdError::generic_err("Round is not closed"));
-        }
-    } else {
-        return Err(StdError::generic_err("Round is not opened"));
+    if user_bet.claimed {
+        return Err(StdError::generic_err("Already claimed"));
     }
+
+    user_bet.claimed = true;
+    store_bet(
+        &mut deps.storage,
+        epoch,
+        deps.api.canonical_address(&env.message.sender)?,
+        &user_bet,
+    )?;
+    let claim_amount = round.claimable_amount(env, user_bet, config.grace_interval);
+
+    if claim_amount.is_zero() {
+        return Err(StdError::generic_err("Nothing to claim"));
+    }
+
+    // TODO transfer claimable amount
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![
+            log("action", "claim"),
+            log("epoch", epoch),
+            log("amount", claim_amount),
+        ],
+        data: None,
+    })
 }

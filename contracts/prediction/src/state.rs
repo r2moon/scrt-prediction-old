@@ -1,4 +1,6 @@
-use cosmwasm_std::{CanonicalAddr, Decimal, StdResult, Storage, Uint128};
+use cosmwasm_std::{
+    Api, CanonicalAddr, Decimal, Env, Extern, Querier, StdResult, Storage, Uint128,
+};
 use cosmwasm_storage::{Bucket, ReadonlyBucket, ReadonlySingleton, Singleton};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -18,12 +20,14 @@ pub struct Config {
     pub oracle_addr: CanonicalAddr,
     pub fee_rate: Decimal,
     pub interval: u64,
+    pub grace_interval: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
     pub epoch: Uint128,
     pub total_fee: Uint128,
+    pub paused: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -37,6 +41,73 @@ pub struct Round {
     pub reward_amount: Uint128,
     pub up_amount: Uint128,
     pub down_amount: Uint128,
+    pub is_genesis: bool,
+}
+
+impl Round {
+    pub fn bettable(&self, env: Env) -> bool {
+        !self.is_genesis
+            && env.block.time >= self.start_time
+            && env.block.time <= self.lock_time
+            && self.open_price.is_none()
+            && self.close_price.is_none()
+    }
+
+    pub fn claimable(&self, env: Env) -> bool {
+        env.block.time >= self.end_time
+            && self.open_price.is_some()
+            && self.close_price.is_some()
+            && Some(self.open_price) != Some(self.close_price)
+    }
+
+    pub fn refundable(&self, env: Env, grace_interval: u64) -> bool {
+        (env.block.time >= self.end_time
+            && self.open_price.is_some()
+            && self.close_price.is_some()
+            && Some(self.open_price) == Some(self.close_price))
+            || (self.close_price.is_none() && env.block.time > self.end_time + grace_interval)
+    }
+
+    pub fn claimable_amount(&self, env: Env, user_bet: Bet, grace_interval: u64) -> Uint128 {
+        if self.claimable(env.clone()) {
+            let win_bet_amount = if Some(self.close_price) > Some(self.open_price)
+                && user_bet.position == Position::UP
+            {
+                self.up_amount
+            } else if user_bet.position == Position::DOWN {
+                self.down_amount
+            } else {
+                Uint128(0)
+            };
+
+            return self.reward_amount * Decimal::from_ratio(user_bet.amount, win_bet_amount);
+        }
+        if self.refundable(env, grace_interval) {
+            return user_bet.amount;
+        }
+        Uint128(0)
+    }
+
+    pub fn executable(&self, env: Env, grace_interval: u64) -> bool {
+        env.block.time >= self.end_time
+            && env.block.time <= self.end_time + grace_interval
+            && self.open_price.is_some()
+            && self.close_price.is_none()
+    }
+
+    pub fn expired(&self, env: Env, grace_interval: u64) -> bool {
+        env.block.time > self.end_time + grace_interval && self.close_price.is_none()
+    }
+
+    pub fn win_position(&self) -> Position {
+        if Some(self.open_price) > Some(self.close_price) {
+            Position::DOWN
+        } else if Some(self.open_price) > Some(self.close_price) {
+            Position::UP
+        } else {
+            Position::DRAW
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

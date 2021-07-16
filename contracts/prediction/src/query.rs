@@ -15,6 +15,7 @@ pub fn query_config<S: Storage, A: Api, Q: Querier>(
         oracle_addr: deps.api.human_address(&state.oracle_addr)?,
         fee_rate: state.fee_rate,
         interval: state.interval,
+        grace_interval: state.grace_interval,
     };
 
     Ok(resp)
