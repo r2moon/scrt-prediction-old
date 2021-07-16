@@ -3,8 +3,8 @@ use cosmwasm_std::{
     Querier, StdError, StdResult, Storage, Uint128,
 };
 
-use crate::handler::bet;
-use crate::manage::update_config;
+use crate::handler::{bet, claim};
+use crate::manage::{finish, update_config, withdraw};
 use crate::msg::Cw20HookMsg;
 use crate::query::query_config;
 use crate::state::{store_config, store_state, Config, State};
@@ -27,7 +27,13 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
 
     store_config(&mut deps.storage, &config)?;
 
-    store_state(&mut deps.storage, &State { epoch: Uint128(0) })?;
+    store_state(
+        &mut deps.storage,
+        &State {
+            epoch: Uint128(0),
+            total_fee: Uint128(0),
+        },
+    )?;
 
     Ok(InitResponse::default())
 }
@@ -56,6 +62,9 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
             fee_rate,
             interval,
         ),
+        HandleMsg::Claim { epoch } => claim(deps, env, epoch),
+        HandleMsg::Withdraw {} => withdraw(deps, env),
+        HandleMsg::Finish {} => finish(deps, env),
     }
 }
 

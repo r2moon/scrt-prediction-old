@@ -23,6 +23,7 @@ pub struct Config {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
     pub epoch: Uint128,
+    pub total_fee: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -30,12 +31,12 @@ pub struct Round {
     pub start_time: u64,
     pub lock_time: u64,
     pub end_time: u64,
-    pub open_price: Uint128,
-    pub close_price: Uint128,
+    pub open_price: Option<Uint128>,
+    pub close_price: Option<Uint128>,
     pub total_amount: Uint128,
+    pub reward_amount: Uint128,
     pub up_amount: Uint128,
     pub down_amount: Uint128,
-    pub win_position: Option<Position>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

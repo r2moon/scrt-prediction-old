@@ -37,6 +37,12 @@ pub enum HandleMsg {
         fee_rate: Option<Decimal>,
         interval: Option<u64>,
     },
+    /// Claim winner reward
+    Claim { epoch: Uint128 },
+    /// Finish ongoing round, lock betting round and start new round
+    Finish {},
+    /// Withdraw performance fee to treasury
+    Withdraw {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
