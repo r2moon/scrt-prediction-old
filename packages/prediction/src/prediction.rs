@@ -14,6 +14,12 @@ pub struct InitMsg {
     pub bet_asset: AssetInfo,
     /// Price oracle address
     pub oracle_addr: HumanAddr,
+    /// Price oracle code hash
+    pub oracle_code_hash: String,
+    /// Base symbol for price
+    pub base_symbol: String,
+    /// Quote symbol for price
+    pub quote_symbol: String,
     /// Fee rate
     pub fee_rate: Decimal,
     /// Interval of each round in seconds
@@ -36,6 +42,7 @@ pub enum HandleMsg {
         operator_addr: Option<HumanAddr>,
         treasury_addr: Option<HumanAddr>,
         oracle_addr: Option<HumanAddr>,
+        oracle_code_hash: Option<String>,
         fee_rate: Option<Decimal>,
         interval: Option<u64>,
         grace_interval: Option<u64>,
@@ -71,6 +78,9 @@ pub struct ConfigResponse {
     pub treasury_addr: HumanAddr,
     pub bet_asset: AssetInfo,
     pub oracle_addr: HumanAddr,
+    pub oracle_code_hash: String,
+    pub base_symbol: String,
+    pub quote_symbol: String,
     pub fee_rate: Decimal,
     pub interval: u64,
     pub grace_interval: u64,

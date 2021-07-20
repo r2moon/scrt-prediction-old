@@ -15,6 +15,7 @@ pub fn update_config<S: Storage, A: Api, Q: Querier>(
     operator_addr: Option<HumanAddr>,
     treasury_addr: Option<HumanAddr>,
     oracle_addr: Option<HumanAddr>,
+    oracle_code_hash: Option<String>,
     fee_rate: Option<Decimal>,
     interval: Option<u64>,
     grace_interval: Option<u64>,
@@ -40,6 +41,7 @@ pub fn update_config<S: Storage, A: Api, Q: Querier>(
 
     if let Some(oracle_addr) = oracle_addr {
         config.oracle_addr = deps.api.canonical_address(&oracle_addr)?;
+        config.oracle_code_hash = oracle_code_hash.unwrap();
     }
 
     if let Some(fee_rate) = fee_rate {
