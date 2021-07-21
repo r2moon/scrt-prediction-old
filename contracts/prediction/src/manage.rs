@@ -3,10 +3,12 @@ use cosmwasm_std::{
     Storage, Uint128,
 };
 
+use crate::query::query_price;
 use crate::state::{
     read_config, read_round, read_state, store_config, store_round, store_state, Config, Round,
     State,
 };
+use prediction::asset::Asset;
 
 pub fn update_config<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -109,8 +111,12 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
         return Err(StdError::generic_err("Cannot execute"));
     }
 
-    // TODO fetch price from band protocol
-    let close_price = Uint128(100);
+    let price_reference_data = query_price(deps, config.clone())?;
+    if price_reference_data.last_updated_base < round.start_time {
+        return Err(StdError::generic_err("Price not updated"));
+    }
+    let close_price = price_reference_data.rate;
+
     if let Some(open_price) = round.open_price {
         round.close_price = Some(close_price);
 
@@ -191,19 +197,26 @@ pub fn withdraw<S: Storage, A: Api, Q: Querier>(
 
     let total_fee = state.total_fee;
     if total_fee > Uint128(0) {
-        // TODO withdraw
+        let return_asset = Asset {
+            amount: total_fee,
+            info: config.bet_asset.to_normal(deps)?,
+        };
+        state.total_fee = Uint128(0);
+
+        store_state(&mut deps.storage, &state)?;
+
+        Ok(HandleResponse {
+            messages: vec![return_asset.into_msg(
+                deps,
+                env.contract.address,
+                deps.api.human_address(&config.treasury_addr)?,
+            )?],
+            log: vec![log("action", "withdraw"), log("amount", total_fee)],
+            data: None,
+        })
     } else {
         return Err(StdError::generic_err("No stacked fee"));
     }
-    state.total_fee = Uint128(0);
-
-    store_state(&mut deps.storage, &state)?;
-
-    Ok(HandleResponse {
-        messages: vec![],
-        log: vec![log("action", "withdraw"), log("amount", total_fee)],
-        data: None,
-    })
 }
 
 pub fn pause<S: Storage, A: Api, Q: Querier>(deps: &mut Extern<S, A, Q>, env: Env) -> HandleResult {

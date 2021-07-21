@@ -7,6 +7,7 @@ use crate::state::{
     read_bet, read_config, read_round, read_state, store_bet, store_round, Bet, Config, Position,
     Round, State,
 };
+use prediction::asset::Asset;
 
 pub fn bet<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -91,15 +92,19 @@ pub fn claim<S: Storage, A: Api, Q: Querier>(
         deps.api.canonical_address(&env.message.sender)?,
         &user_bet,
     )?;
-    let claim_amount = round.claimable_amount(env, user_bet, config.grace_interval);
+    let claim_amount = round.claimable_amount(env.clone(), user_bet, config.grace_interval);
 
     if claim_amount.is_zero() {
         return Err(StdError::generic_err("Nothing to claim"));
     }
 
-    // TODO transfer claimable amount
+    let return_asset = Asset {
+        amount: claim_amount,
+        info: config.bet_asset.to_normal(deps)?,
+    };
+
     Ok(HandleResponse {
-        messages: vec![],
+        messages: vec![return_asset.into_msg(deps, env.contract.address, env.message.sender)?],
         log: vec![
             log("action", "claim"),
             log("epoch", epoch),

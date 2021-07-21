@@ -1,6 +1,4 @@
-use cosmwasm_std::{
-    Api, CanonicalAddr, Decimal, Env, Extern, Querier, StdResult, Storage, Uint128,
-};
+use cosmwasm_std::{CanonicalAddr, Decimal, Env, StdResult, Storage, Uint128};
 use cosmwasm_storage::{Bucket, ReadonlyBucket, ReadonlySingleton, Singleton};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -102,15 +100,15 @@ impl Round {
         env.block.time > self.end_time + grace_interval && self.close_price.is_none()
     }
 
-    pub fn win_position(&self) -> Position {
-        if Some(self.open_price) > Some(self.close_price) {
-            Position::DOWN
-        } else if Some(self.open_price) > Some(self.close_price) {
-            Position::UP
-        } else {
-            Position::DRAW
-        }
-    }
+    // pub fn win_position(&self) -> Position {
+    //     if Some(self.open_price) > Some(self.close_price) {
+    //         Position::DOWN
+    //     } else if Some(self.open_price) > Some(self.close_price) {
+    //         Position::UP
+    //     } else {
+    //         Position::DRAW
+    //     }
+    // }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
