@@ -4,6 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use prediction::asset::AssetInfoRaw;
+use prediction::prediction::Position;
 
 static KEY_CONFIG: &[u8] = b"config";
 static KEY_STATE: &[u8] = b"state";
@@ -116,14 +117,6 @@ pub struct Bet {
     pub amount: Uint128,
     pub position: Position,
     pub claimed: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum Position {
-    UP,
-    DOWN,
-    DRAW,
 }
 
 pub fn store_config<S: Storage>(storage: &mut S, data: &Config) -> StdResult<()> {

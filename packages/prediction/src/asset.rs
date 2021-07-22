@@ -168,6 +168,13 @@ pub enum AssetInfoRaw {
 }
 
 impl AssetInfoRaw {
+    pub fn is_native_token(&self) -> bool {
+        match self {
+            AssetInfoRaw::NativeToken { .. } => true,
+            AssetInfoRaw::Token { .. } => false,
+        }
+    }
+
     pub fn to_normal<S: Storage, A: Api, Q: Querier>(
         &self,
         deps: &Extern<S, A, Q>,

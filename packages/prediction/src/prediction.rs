@@ -47,6 +47,8 @@ pub enum HandleMsg {
         interval: Option<u64>,
         grace_interval: Option<u64>,
     },
+    /// Bet
+    Bet { position: Position },
     /// Claim winner reward
     Claim { epoch: Uint128 },
     /// Finish ongoing round, lock betting round and start new round
@@ -61,7 +63,9 @@ pub enum HandleMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct MigrateMsg {}
+pub enum Cw20HookMsg {
+    Bet { position: Position },
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -88,4 +92,12 @@ pub struct ConfigResponse {
     pub fee_rate: Decimal,
     pub interval: u64,
     pub grace_interval: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Position {
+    UP,
+    DOWN,
+    DRAW,
 }

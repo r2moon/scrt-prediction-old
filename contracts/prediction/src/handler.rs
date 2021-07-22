@@ -4,10 +4,11 @@ use cosmwasm_std::{
 };
 
 use crate::state::{
-    read_bet, read_config, read_round, read_state, store_bet, store_round, Bet, Config, Position,
-    Round, State,
+    read_bet, read_config, read_round, read_state, store_bet, store_round, Bet, Config, Round,
+    State,
 };
 use prediction::asset::Asset;
+use prediction::prediction::Position;
 
 pub fn bet<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,

@@ -5,10 +5,10 @@ use cosmwasm_std::{
 
 use crate::handler::{bet, claim};
 use crate::manage::{execute_round, pause, start_genesis_round, update_config, withdraw};
-use crate::msg::Cw20HookMsg;
 use crate::query::{query_bet, query_config, query_round};
-use crate::state::{store_config, store_state, Config, State};
-use prediction::prediction::{HandleMsg, InitMsg, QueryMsg};
+use crate::state::{read_config, store_config, store_state, Config, State};
+use prediction::asset::AssetInfoRaw;
+use prediction::prediction::{Cw20HookMsg, HandleMsg, InitMsg, Position, QueryMsg};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -58,6 +58,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 ) -> HandleResult {
     match msg {
         HandleMsg::Receive { amount, msg, from } => receive_cw20(deps, env, from, amount, msg),
+        HandleMsg::Bet { position } => try_bet(deps, env, position),
         HandleMsg::UpdateConfig {
             owner_addr,
             operator_addr,
@@ -87,7 +88,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     }
 }
 
-pub fn receive_cw20<S: Storage, A: Api, Q: Querier>(
+fn receive_cw20<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
     //todo: figure out if this is "from" or "sender"
@@ -97,10 +98,44 @@ pub fn receive_cw20<S: Storage, A: Api, Q: Querier>(
 ) -> HandleResult {
     if let Some(bin_msg) = msg {
         match from_binary(&bin_msg)? {
-            Cw20HookMsg::Bet { position } => bet(deps, env, from, position, amount),
+            Cw20HookMsg::Bet { position } => {
+                let config = read_config(&deps.storage)?;
+                match config.bet_asset {
+                    AssetInfoRaw::NativeToken { .. } => Err(StdError::generic_err("invalid asset")),
+                    AssetInfoRaw::Token { contract_addr, .. } => {
+                        if env.message.sender == deps.api.human_address(&contract_addr)? {
+                            bet(deps, env, from, position, amount)
+                        } else {
+                            Err(StdError::generic_err("invalid asset"))
+                        }
+                    }
+                }
+            }
         }
     } else {
         Err(StdError::generic_err("data should be given"))
+    }
+}
+
+fn try_bet<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    position: Position,
+) -> HandleResult {
+    let config = read_config(&deps.storage)?;
+
+    match config.bet_asset {
+        AssetInfoRaw::NativeToken { denom } => {
+            let amount: Uint128 = env
+                .message
+                .sent_funds
+                .iter()
+                .find(|c| c.denom == denom)
+                .map(|c| Uint128::from(c.amount))
+                .unwrap_or_else(Uint128::zero);
+            bet(deps, env.clone(), env.message.sender, position, amount)
+        }
+        AssetInfoRaw::Token { .. } => Err(StdError::generic_err("invalid asset")),
     }
 }
 
