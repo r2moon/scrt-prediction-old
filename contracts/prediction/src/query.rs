@@ -1,6 +1,9 @@
-use cosmwasm_std::{to_binary, Api, Extern, Querier, QueryRequest, StdResult, Storage, WasmQuery};
+use cosmwasm_std::{
+    to_binary, Api, Extern, HumanAddr, Querier, QueryRequest, StdResult, Storage, Uint128,
+    WasmQuery,
+};
 
-use crate::state::{read_config, Config};
+use crate::state::{read_bet, read_config, read_round, Bet, Config, Round};
 use prediction::oracle::{QueryMsg as OracleQueryMsg, ReferenceData};
 use prediction::prediction::ConfigResponse;
 
@@ -23,6 +26,23 @@ pub fn query_config<S: Storage, A: Api, Q: Querier>(
     };
 
     Ok(resp)
+}
+
+pub fn query_round<S: Storage, A: Api, Q: Querier>(
+    deps: &Extern<S, A, Q>,
+    epoch: Uint128,
+) -> StdResult<Round> {
+    let round: Round = read_round(&deps.storage, epoch)?;
+    Ok(round)
+}
+
+pub fn query_bet<S: Storage, A: Api, Q: Querier>(
+    deps: &Extern<S, A, Q>,
+    epoch: Uint128,
+    user: HumanAddr,
+) -> StdResult<Bet> {
+    let bet: Bet = read_bet(&deps.storage, epoch, deps.api.canonical_address(&user)?)?;
+    Ok(bet)
 }
 
 pub fn query_price<S: Storage, A: Api, Q: Querier>(

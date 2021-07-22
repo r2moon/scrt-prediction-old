@@ -68,6 +68,10 @@ pub struct MigrateMsg {}
 pub enum QueryMsg {
     /// Query current configuration
     Config {},
+    /// Query round by epoch
+    Round { epoch: Uint128 },
+    /// Query bet by user and epoch
+    Bet { epoch: Uint128, user: HumanAddr },
 }
 
 // We define a custom struct for each query response
