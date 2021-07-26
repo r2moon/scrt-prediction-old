@@ -72,6 +72,8 @@ pub enum Cw20HookMsg {
 pub enum QueryMsg {
     /// Query current configuration
     Config {},
+    /// Query current state
+    State {},
     /// Query round by epoch
     Round { epoch: Uint128 },
     /// Query bet by user and epoch

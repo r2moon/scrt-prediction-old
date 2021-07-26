@@ -5,7 +5,7 @@ use cosmwasm_std::{
 
 use crate::handler::{bet, claim};
 use crate::manage::{execute_round, pause, start_genesis_round, update_config, withdraw};
-use crate::query::{query_bet, query_config, query_round};
+use crate::query::{query_bet, query_config, query_round, query_state};
 use crate::state::{read_config, store_config, store_state, Config, State};
 use prediction::asset::AssetInfoRaw;
 use prediction::prediction::{Cw20HookMsg, HandleMsg, InitMsg, Position, QueryMsg};
@@ -145,6 +145,7 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Round { epoch } => to_binary(&query_round(deps, epoch)?),
         QueryMsg::Bet { epoch, user } => to_binary(&query_bet(deps, epoch, user)?),
     }

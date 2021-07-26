@@ -3,7 +3,7 @@ use cosmwasm_std::{
     WasmQuery,
 };
 
-use crate::state::{read_bet, read_config, read_round, Bet, Config, Round};
+use crate::state::{read_bet, read_config, read_round, read_state, Bet, Config, Round, State};
 use prediction::oracle::{QueryMsg as OracleQueryMsg, ReferenceData};
 use prediction::prediction::ConfigResponse;
 
@@ -26,6 +26,11 @@ pub fn query_config<S: Storage, A: Api, Q: Querier>(
     };
 
     Ok(resp)
+}
+
+pub fn query_state<S: Storage, A: Api, Q: Querier>(deps: &Extern<S, A, Q>) -> StdResult<State> {
+    let state: State = read_state(&deps.storage)?;
+    Ok(state)
 }
 
 pub fn query_round<S: Storage, A: Api, Q: Querier>(
