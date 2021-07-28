@@ -7,8 +7,8 @@ use crate::handler::{bet, claim};
 use crate::manage::{execute_round, pause, start_genesis_round, update_config, withdraw};
 use crate::query::{query_bet, query_config, query_round, query_state};
 use crate::state::{read_config, store_config, store_state, Config, State};
-use prediction::asset::AssetInfoRaw;
-use prediction::prediction::{Cw20HookMsg, HandleMsg, InitMsg, Position, QueryMsg};
+use scrt_prediction::asset::AssetInfoRaw;
+use scrt_prediction::prediction::{Cw20HookMsg, HandleMsg, InitMsg, Position, QueryMsg};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -30,8 +30,6 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         bet_asset: msg.bet_asset.to_raw(deps)?,
         oracle_addr: deps.api.canonical_address(&msg.oracle_addr)?,
         oracle_code_hash: msg.oracle_code_hash,
-        base_symbol: msg.base_symbol,
-        quote_symbol: msg.quote_symbol,
         fee_rate: msg.fee_rate,
         interval: msg.interval,
         grace_interval: msg.grace_interval,

@@ -1,9 +1,9 @@
 [package]
-name = "prediction"
+name = "band-protocol"
 version = "1.0.0"
-authors = ["Ryuhei Matsuda"]
+authors = ["Band protocol"]
 edition = "2018"
-description = "Price prediction package"
+description = "Band protocol oracle"
 license = "Apache-2.0"
 repository = "https://github.com/ryuheimat/scrt-prediction"
 homepage = "https://scrt.network/"
@@ -21,7 +21,3 @@ cosmwasm-storage = { git = "https://github.com/enigmampc/SecretNetwork", rev = "
 cosmwasm-std = { git = "https://github.com/enigmampc/SecretNetwork", rev = "004c6bc" }
 schemars = "0.7"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
-secret-toolkit = { git = "https://github.com/enigmampc/secret-toolkit", branch = "debug-print" }
-# secretswap-token = { path= "../../contracts/secretswap_token"}
-#[dev-dependencies]
-#cosmwasm-vm = { version = "0.10.1", default-features = false }

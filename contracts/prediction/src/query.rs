@@ -4,8 +4,8 @@ use cosmwasm_std::{
 };
 
 use crate::state::{read_bet, read_config, read_round, read_state, Bet, Config, Round, State};
-use prediction::oracle::{QueryMsg as OracleQueryMsg, ReferenceData};
-use prediction::prediction::ConfigResponse;
+use scrt_prediction::oracle::{PriceData, QueryMsg as OracleQueryMsg};
+use scrt_prediction::prediction::ConfigResponse;
 
 pub fn query_config<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
@@ -18,8 +18,6 @@ pub fn query_config<S: Storage, A: Api, Q: Querier>(
         bet_asset: config.bet_asset.to_normal(deps)?,
         oracle_addr: deps.api.human_address(&config.oracle_addr)?,
         oracle_code_hash: config.oracle_code_hash,
-        base_symbol: config.base_symbol,
-        quote_symbol: config.quote_symbol,
         fee_rate: config.fee_rate,
         interval: config.interval,
         grace_interval: config.grace_interval,
@@ -53,16 +51,12 @@ pub fn query_bet<S: Storage, A: Api, Q: Querier>(
 pub fn query_price<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     config: Config,
-) -> StdResult<ReferenceData> {
-    let reference_data: ReferenceData =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: deps.api.human_address(&config.oracle_addr)?,
-            callback_code_hash: config.oracle_code_hash,
-            msg: to_binary(&OracleQueryMsg::GetReferenceData {
-                base_symbol: config.base_symbol,
-                quote_symbol: config.quote_symbol,
-            })?,
-        }))?;
+) -> StdResult<PriceData> {
+    let price_data: PriceData = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: deps.api.human_address(&config.oracle_addr)?,
+        callback_code_hash: config.oracle_code_hash,
+        msg: to_binary(&OracleQueryMsg::QueryLatestPrice {})?,
+    }))?;
 
-    Ok(reference_data)
+    Ok(price_data)
 }

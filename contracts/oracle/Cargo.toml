@@ -1,9 +1,9 @@
 [package]
-name = "price-prediction"
+name = "price-oracle"
 version = "0.1.0"
 authors = ["Ryuhei Matsuda"]
 edition = "2018"
-description = "Price prediction"
+description = "Oracle for price prediction"
 license = "MIT"
 exclude = [
     # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -22,11 +22,11 @@ default = []
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-secret-toolkit = { git = "https://github.com/enigmampc/secret-toolkit", branch = "debug-print" }
 cosmwasm-storage = { git = "https://github.com/enigmampc/SecretNetwork", rev = "004c6bc" }
 cosmwasm-std = { git = "https://github.com/enigmampc/SecretNetwork", rev = "004c6bc" }
 schemars = "0.7"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
+band-protocol = { version = "1.0.0", path = "../../packages/band_protocol" }
 scrt-prediction = { version = "1.0.0", path = "../../packages/scrt_prediction" }
 
 [dev-dependencies]

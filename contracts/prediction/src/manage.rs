@@ -8,7 +8,7 @@ use crate::state::{
     read_config, read_round, read_state, store_config, store_round, store_state, Config, Round,
     State,
 };
-use prediction::asset::Asset;
+use scrt_prediction::asset::Asset;
 
 pub fn update_config<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -101,7 +101,7 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
     }
 
     let price_reference_data = query_price(deps, config.clone())?;
-    if price_reference_data.last_updated_base < round.start_time {
+    if price_reference_data.last_updated < round.start_time {
         return Err(StdError::generic_err("Price not updated"));
     }
     let close_price = price_reference_data.rate;

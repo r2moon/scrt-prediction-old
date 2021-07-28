@@ -3,8 +3,8 @@ use cosmwasm_storage::{Bucket, ReadonlyBucket, ReadonlySingleton, Singleton};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use prediction::asset::AssetInfoRaw;
-use prediction::prediction::Position;
+use scrt_prediction::asset::AssetInfoRaw;
+use scrt_prediction::prediction::Position;
 
 static KEY_CONFIG: &[u8] = b"config";
 static KEY_STATE: &[u8] = b"state";
@@ -18,8 +18,6 @@ pub struct Config {
     pub bet_asset: AssetInfoRaw,
     pub oracle_addr: CanonicalAddr,
     pub oracle_code_hash: String,
-    pub base_symbol: String,
-    pub quote_symbol: String,
     pub fee_rate: Decimal,
     pub interval: u64,
     pub grace_interval: u64,

@@ -16,10 +16,6 @@ pub struct InitMsg {
     pub oracle_addr: HumanAddr,
     /// Price oracle code hash
     pub oracle_code_hash: String,
-    /// Base symbol for price
-    pub base_symbol: String,
-    /// Quote symbol for price
-    pub quote_symbol: String,
     /// Fee rate
     pub fee_rate: Decimal,
     /// Interval of each round in seconds
@@ -89,8 +85,6 @@ pub struct ConfigResponse {
     pub bet_asset: AssetInfo,
     pub oracle_addr: HumanAddr,
     pub oracle_code_hash: String,
-    pub base_symbol: String,
-    pub quote_symbol: String,
     pub fee_rate: Decimal,
     pub interval: u64,
     pub grace_interval: u64,

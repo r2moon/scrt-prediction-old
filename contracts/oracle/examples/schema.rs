@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use scrt_prediction::prediction::{ConfigResponse, HandleMsg, InitMsg, QueryMsg};
+use scrt_prediction::oracle::{ConfigResponse, HandleMsg, InitMsg, QueryMsg};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();
