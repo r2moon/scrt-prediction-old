@@ -1,0 +1,2 @@
+62b135a7554a73824b45a8ff9c921651cf2b9f9d568d6563d25a2cb55bcbeac5  price_oracle.wasm
+e8de02d22da733aae3aaa90721f9a0767e3a191f27ae2a5f64d2abb38bd799f6  price_prediction.wasm
