@@ -76,7 +76,9 @@ impl Round {
                 && user_bet.position == Position::UP
             {
                 self.up_amount
-            } else if user_bet.position == Position::DOWN {
+            } else if Some(self.close_price) < Some(self.open_price)
+                && user_bet.position == Position::DOWN
+            {
                 self.down_amount
             } else {
                 Uint128(0)

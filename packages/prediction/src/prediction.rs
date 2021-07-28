@@ -101,5 +101,4 @@ pub struct ConfigResponse {
 pub enum Position {
     UP,
     DOWN,
-    DRAW,
 }

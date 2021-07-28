@@ -105,7 +105,7 @@ pub fn claim<S: Storage, A: Api, Q: Querier>(
     };
 
     Ok(HandleResponse {
-        messages: vec![return_asset.into_msg(deps, env.contract.address, env.message.sender)?],
+        messages: vec![return_asset.into_msg(env.contract.address, env.message.sender)?],
         log: vec![
             log("action", "claim"),
             log("epoch", epoch),

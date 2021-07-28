@@ -17,50 +17,7 @@ impl Asset {
         self.info.is_native_token()
     }
 
-    pub fn compute_tax<S: Storage, A: Api, Q: Querier>(
-        &self,
-        _deps: &Extern<S, A, Q>,
-    ) -> StdResult<Uint128> {
-        // let amount = self.amount;
-        // if let AssetInfo::NativeToken { denom } = &self.info {
-        //     // let terra_querier = TerraQuerier::new(&deps.querier);
-        //     // let tax_rate: Decimal = (terra_querier.query_tax_rate()?).rate;
-        //     // let tax_cap: Uint128 = (terra_querier.query_tax_cap(denom.to_string())?).cap;
-        //     Ok(std::cmp::min(
-        //         (amount
-        //             - amount.multiply_ratio(
-        //                 DECIMAL_FRACTION,
-        //                 DECIMAL_FRACTION * tax_rate + DECIMAL_FRACTION,
-        //             ))?,
-        //         tax_cap,
-        //     ))
-        // } else {
-        //     Ok(Uint128::zero())
-        // }
-        Ok(Uint128::zero())
-    }
-
-    pub fn deduct_tax<S: Storage, A: Api, Q: Querier>(
-        &self,
-        deps: &Extern<S, A, Q>,
-    ) -> StdResult<Coin> {
-        let amount = self.amount;
-        if let AssetInfo::NativeToken { denom } = &self.info {
-            Ok(Coin {
-                denom: denom.to_string(),
-                amount: (amount - self.compute_tax(deps)?)?,
-            })
-        } else {
-            Err(StdError::generic_err("cannot deduct tax from token asset"))
-        }
-    }
-
-    pub fn into_msg<S: Storage, A: Api, Q: Querier>(
-        self,
-        deps: &Extern<S, A, Q>,
-        sender: HumanAddr,
-        recipient: HumanAddr,
-    ) -> StdResult<CosmosMsg> {
+    pub fn into_msg(self, sender: HumanAddr, recipient: HumanAddr) -> StdResult<CosmosMsg> {
         let amount = self.amount;
 
         match &self.info {
@@ -81,10 +38,13 @@ impl Asset {
                 })?,
                 send: vec![],
             })),
-            AssetInfo::NativeToken { .. } => Ok(CosmosMsg::Bank(BankMsg::Send {
+            AssetInfo::NativeToken { denom } => Ok(CosmosMsg::Bank(BankMsg::Send {
                 from_address: sender,
                 to_address: recipient,
-                amount: vec![self.deduct_tax(deps)?],
+                amount: vec![Coin {
+                    denom: denom.into(),
+                    amount,
+                }],
             })),
         }
     }

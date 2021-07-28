@@ -93,18 +93,7 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
     let mut round: Round = read_round(&deps.storage, progressing_epoch)?;
 
     if round.expired(env.clone(), config.grace_interval) {
-        state.paused = true;
-        store_state(&mut deps.storage, &state)?;
-
-        return Ok(HandleResponse {
-            messages: vec![],
-            log: vec![
-                log("action", "execute"),
-                log("epoch", progressing_epoch),
-                log("status", "expired"),
-            ],
-            data: None,
-        });
+        return Err(StdError::generic_err("Expired"));
     }
 
     if !round.executable(env.clone(), config.grace_interval) {
@@ -207,7 +196,6 @@ pub fn withdraw<S: Storage, A: Api, Q: Querier>(
 
         Ok(HandleResponse {
             messages: vec![return_asset.into_msg(
-                deps,
                 env.contract.address,
                 deps.api.human_address(&config.treasury_addr)?,
             )?],
