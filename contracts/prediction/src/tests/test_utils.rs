@@ -19,7 +19,7 @@ pub fn init_prediction(deps: &mut Extern<MockStorage, MockApi, MockQuerier>) {
         grace_interval: 18000,
     };
 
-    let env = mock_env("addr", &[]);
+    let env = mock_env("owner_addr", &[]);
 
     let _res = init(deps, env, msg).unwrap();
 }

@@ -67,7 +67,7 @@ pub fn update_config<S: Storage, A: Api, Q: Querier>(
 
     Ok(HandleResponse {
         messages: vec![],
-        log: vec![log("action", "update_config"), log("status", "success")],
+        log: vec![log("action", "update_config")],
         data: None,
     })
 }
