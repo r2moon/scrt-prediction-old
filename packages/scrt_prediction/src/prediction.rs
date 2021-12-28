@@ -96,3 +96,10 @@ pub enum Position {
     UP,
     DOWN,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct State {
+    pub epoch: Uint128,
+    pub total_fee: Uint128,
+    pub paused: bool,
+}
