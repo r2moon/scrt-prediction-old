@@ -6,9 +6,11 @@ use cosmwasm_std::{
 use crate::handler::{bet, claim};
 use crate::manage::{execute_round, pause, start_genesis_round, update_config, withdraw};
 use crate::query::{query_bet, query_config, query_round, query_state};
-use crate::state::{read_config, store_config, store_state, Config, State};
-use scrt_prediction::asset::AssetInfoRaw;
-use scrt_prediction::prediction::{Cw20HookMsg, HandleMsg, InitMsg, Position, QueryMsg};
+use crate::state::{read_config, store_config, store_state, Config};
+use scrt_prediction::{
+    asset::AssetInfoRaw,
+    prediction::{Cw20HookMsg, HandleMsg, InitMsg, Position, QueryMsg, State},
+};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -40,8 +42,8 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     store_state(
         &mut deps.storage,
         &State {
-            epoch: Uint128(0),
-            total_fee: Uint128(0),
+            epoch: Uint128::zero(),
+            total_fee: Uint128::zero(),
             paused: true,
         },
     )?;

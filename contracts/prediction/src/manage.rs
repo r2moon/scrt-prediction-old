@@ -6,9 +6,8 @@ use cosmwasm_std::{
 use crate::query::query_price;
 use crate::state::{
     read_config, read_round, read_state, store_config, store_round, store_state, Config, Round,
-    State,
 };
-use scrt_prediction::asset::Asset;
+use scrt_prediction::{asset::Asset, prediction::State};
 
 pub fn update_config<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,

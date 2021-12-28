@@ -3,8 +3,10 @@ use cosmwasm_storage::{Bucket, ReadonlyBucket, ReadonlySingleton, Singleton};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use scrt_prediction::asset::AssetInfoRaw;
-use scrt_prediction::prediction::Position;
+use scrt_prediction::{
+    asset::AssetInfoRaw,
+    prediction::{Position, State},
+};
 
 static KEY_CONFIG: &[u8] = b"config";
 static KEY_STATE: &[u8] = b"state";
@@ -21,13 +23,6 @@ pub struct Config {
     pub fee_rate: Decimal,
     pub interval: u64,
     pub grace_interval: u64,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct State {
-    pub epoch: Uint128,
-    pub total_fee: Uint128,
-    pub paused: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

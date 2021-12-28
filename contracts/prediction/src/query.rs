@@ -3,9 +3,11 @@ use cosmwasm_std::{
     WasmQuery,
 };
 
-use crate::state::{read_bet, read_config, read_round, read_state, Bet, Config, Round, State};
-use scrt_prediction::oracle::{PriceData, QueryMsg as OracleQueryMsg};
-use scrt_prediction::prediction::ConfigResponse;
+use crate::state::{read_bet, read_config, read_round, read_state, Bet, Config, Round};
+use scrt_prediction::{
+    oracle::{PriceData, QueryMsg as OracleQueryMsg},
+    prediction::{ConfigResponse, State},
+};
 
 pub fn query_config<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,

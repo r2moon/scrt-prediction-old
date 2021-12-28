@@ -30,5 +30,4 @@ serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 scrt-prediction = { version = "1.0.0", path = "../../packages/scrt_prediction" }
 
 [dev-dependencies]
-cosmwasm-vm = { version = "0.10.1", default-features = false, features = ["iterator"] }
 cosmwasm-schema = "0.10.1"
