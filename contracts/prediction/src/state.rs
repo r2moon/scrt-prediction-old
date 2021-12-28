@@ -74,7 +74,7 @@ impl Round {
             {
                 self.down_amount
             } else {
-                Uint128(0)
+                Uint128::zero()
             };
 
             return self.reward_amount * Decimal::from_ratio(user_bet.amount, win_bet_amount);
@@ -82,13 +82,13 @@ impl Round {
         if self.refundable(env, grace_interval) {
             return user_bet.amount;
         }
-        Uint128(0)
+        Uint128::zero()
     }
 
     pub fn executable(&self, env: Env, grace_interval: u64) -> bool {
         env.block.time >= self.end_time
             && env.block.time <= self.end_time + grace_interval
-            && self.open_price.is_some()
+            && (self.is_genesis || self.open_price.is_some())
             && self.close_price.is_none()
     }
 

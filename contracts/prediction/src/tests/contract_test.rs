@@ -8,6 +8,7 @@ use scrt_prediction::{
 
 use crate::{
     contract::{handle, init, query},
+    state::Round,
     tests::test_utils::init_prediction,
 };
 
@@ -110,7 +111,7 @@ fn test_init() {
 }
 
 #[test]
-fn test_update_config_failed_unauthorized() {
+fn test_update_config_failed_if_unauthorized() {
     let mut deps = mock_dependencies(20, &[]);
 
     init_prediction(&mut deps);
@@ -220,5 +221,84 @@ fn test_update_config() {
             grace_interval: 19000,
         },
         config
+    );
+}
+
+#[test]
+fn test_start_genesis_round_failed_if_unauthorized() {
+    let mut deps = mock_dependencies(20, &[]);
+
+    init_prediction(&mut deps);
+
+    let msg = HandleMsg::StartGenesisRound {};
+
+    let env = mock_env("addr", &[]);
+
+    let res = handle(&mut deps, env, msg);
+    match res {
+        Err(StdError::Unauthorized { .. }) => {}
+        _ => panic!("Must return unauthorized error"),
+    }
+}
+
+#[test]
+fn test_start_genesis_round() {
+    let mut deps = mock_dependencies(20, &[]);
+
+    init_prediction(&mut deps);
+
+    let msg = HandleMsg::StartGenesisRound {};
+
+    let env = mock_env("owner_addr", &[]);
+
+    let res = handle(&mut deps, env.clone(), msg).unwrap();
+
+    assert_eq!(res.log, vec![log("action", "start_genesis_round"),]);
+
+    let res = query(&deps, QueryMsg::State {}).unwrap();
+    let state: State = from_binary(&res).unwrap();
+    assert_eq!(
+        State {
+            epoch: Uint128(2),
+            total_fee: Uint128::zero(),
+            paused: false,
+        },
+        state
+    );
+
+    let res = query(&deps, QueryMsg::Round { epoch: Uint128(1) }).unwrap();
+    let genesis_round: Round = from_binary(&res).unwrap();
+    assert_eq!(
+        Round {
+            start_time: env.block.time - 18000,
+            lock_time: env.block.time,
+            end_time: env.block.time + 18000,
+            open_price: None,
+            close_price: None,
+            total_amount: Uint128::zero(),
+            reward_amount: Uint128::zero(),
+            up_amount: Uint128::zero(),
+            down_amount: Uint128::zero(),
+            is_genesis: true,
+        },
+        genesis_round
+    );
+
+    let res = query(&deps, QueryMsg::Round { epoch: Uint128(2) }).unwrap();
+    let genesis_round: Round = from_binary(&res).unwrap();
+    assert_eq!(
+        Round {
+            start_time: env.block.time,
+            lock_time: env.block.time + 18000,
+            end_time: env.block.time + 36000,
+            open_price: None,
+            close_price: None,
+            total_amount: Uint128::zero(),
+            reward_amount: Uint128::zero(),
+            up_amount: Uint128::zero(),
+            down_amount: Uint128::zero(),
+            is_genesis: false,
+        },
+        genesis_round
     );
 }

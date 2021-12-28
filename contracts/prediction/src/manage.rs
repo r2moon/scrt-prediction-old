@@ -105,69 +105,71 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
     }
     let close_price = price_reference_data.rate;
 
-    if let Some(open_price) = round.open_price {
-        round.close_price = Some(close_price);
-
-        if close_price != open_price {
-            let mut fee = round.total_amount * config.fee_rate;
-            round.reward_amount = (round.total_amount - fee)?;
-
-            if close_price > open_price {
-                if round.reward_amount < round.up_amount {
-                    round.reward_amount = round.total_amount;
-                    fee = Uint128(0);
-                }
-            } else {
-                if round.reward_amount < round.down_amount {
-                    round.reward_amount = round.total_amount;
-                    fee = Uint128(0);
-                }
-            }
-
-            state.total_fee = state.total_fee + fee;
-        }
-
-        // Store result of round
-        store_round(&mut deps.storage, progressing_epoch, &round)?;
-
-        let mut betting_round: Round = read_round(&deps.storage, betting_epoch)?;
-        betting_round.open_price = Some(close_price);
-
-        // Lock betting round
-        store_round(&mut deps.storage, betting_epoch, &betting_round)?;
-
-        // Increase epoch
-        state.epoch = state.epoch + Uint128(1);
-        store_state(&mut deps.storage, &state)?;
-
-        let new_round = Round {
-            start_time: env.block.time,
-            lock_time: env.block.time + config.interval,
-            end_time: env.block.time + config.interval * 2,
-            open_price: None,
-            close_price: None,
-            total_amount: Uint128(0),
-            reward_amount: Uint128(0),
-            up_amount: Uint128(0),
-            down_amount: Uint128(0),
-            is_genesis: false,
-        };
-
-        // Start new round
-        store_round(&mut deps.storage, state.epoch, &new_round)?;
-
-        Ok(HandleResponse {
-            messages: vec![],
-            log: vec![
-                log("action", "finish"),
-                log("epoch", progressing_epoch),
-                log("close_price", close_price),
-            ],
-            data: None,
-        })
-    } else {
+    if !round.is_genesis && round.open_price.is_none() {
         return Err(StdError::generic_err("Round is not opened"));
     }
+
+    round.close_price = Some(close_price);
+
+    if !round.is_genesis && close_price != round.open_price.unwrap() {
+        let open_price = round.open_price.unwrap();
+        let mut fee = round.total_amount * config.fee_rate;
+        round.reward_amount = (round.total_amount - fee)?;
+
+        if close_price > open_price {
+            if round.reward_amount < round.up_amount {
+                round.reward_amount = round.total_amount;
+                fee = Uint128::zero();
+            }
+        } else {
+            if round.reward_amount < round.down_amount {
+                round.reward_amount = round.total_amount;
+                fee = Uint128::zero();
+            }
+        }
+
+        state.total_fee = state.total_fee + fee;
+    }
+
+    // Store result of round
+    store_round(&mut deps.storage, progressing_epoch, &round)?;
+
+    let mut betting_round: Round = read_round(&deps.storage, betting_epoch)?;
+    betting_round.open_price = Some(close_price);
+
+    // Lock betting round
+    store_round(&mut deps.storage, betting_epoch, &betting_round)?;
+
+    // Increase epoch
+    state.epoch = state.epoch + Uint128(1);
+    store_state(&mut deps.storage, &state)?;
+
+    let new_round = Round {
+        start_time: env.block.time,
+        lock_time: env.block.time + config.interval,
+        end_time: env.block.time + config.interval * 2,
+        open_price: None,
+        close_price: None,
+        total_amount: Uint128::zero(),
+        reward_amount: Uint128::zero(),
+        up_amount: Uint128::zero(),
+        down_amount: Uint128::zero(),
+        is_genesis: false,
+    };
+
+    // Start new round
+    store_round(&mut deps.storage, state.epoch, &new_round)?;
+
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![
+            log("action", "execute"),
+            log("epoch_finish", progressing_epoch),
+            log("epoch_start", betting_epoch),
+            log("close_price", close_price),
+        ],
+        data: None,
+    })
 }
 
 pub fn withdraw<S: Storage, A: Api, Q: Querier>(
@@ -184,12 +186,12 @@ pub fn withdraw<S: Storage, A: Api, Q: Querier>(
     let mut state: State = read_state(&deps.storage)?;
 
     let total_fee = state.total_fee;
-    if total_fee > Uint128(0) {
+    if total_fee > Uint128::zero() {
         let return_asset = Asset {
             amount: total_fee,
             info: config.bet_asset.to_normal(deps)?,
         };
-        state.total_fee = Uint128(0);
+        state.total_fee = Uint128::zero();
 
         store_state(&mut deps.storage, &state)?;
 
@@ -248,7 +250,6 @@ pub fn start_genesis_round<S: Storage, A: Api, Q: Querier>(
 
     let epoch = state.epoch + Uint128(1);
 
-    let open_price = Uint128(0);
     // Start genesis round
     store_round(
         &mut deps.storage,
@@ -257,12 +258,12 @@ pub fn start_genesis_round<S: Storage, A: Api, Q: Querier>(
             start_time: env.block.time - config.interval,
             lock_time: env.block.time,
             end_time: env.block.time + config.interval,
-            open_price: Some(open_price),
+            open_price: None,
             close_price: None,
-            total_amount: Uint128(0),
-            reward_amount: Uint128(0),
-            up_amount: Uint128(0),
-            down_amount: Uint128(0),
+            total_amount: Uint128::zero(),
+            reward_amount: Uint128::zero(),
+            up_amount: Uint128::zero(),
+            down_amount: Uint128::zero(),
             is_genesis: true,
         },
     )?;
@@ -276,10 +277,10 @@ pub fn start_genesis_round<S: Storage, A: Api, Q: Querier>(
             end_time: env.block.time + config.interval * 2,
             open_price: None,
             close_price: None,
-            total_amount: Uint128(0),
-            reward_amount: Uint128(0),
-            up_amount: Uint128(0),
-            down_amount: Uint128(0),
+            total_amount: Uint128::zero(),
+            reward_amount: Uint128::zero(),
+            up_amount: Uint128::zero(),
+            down_amount: Uint128::zero(),
             is_genesis: false,
         },
     )?;
@@ -290,7 +291,7 @@ pub fn start_genesis_round<S: Storage, A: Api, Q: Querier>(
 
     Ok(HandleResponse {
         messages: vec![],
-        log: vec![log("action", "pause")],
+        log: vec![log("action", "start_genesis_round")],
         data: None,
     })
 }
