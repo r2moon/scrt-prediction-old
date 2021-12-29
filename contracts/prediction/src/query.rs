@@ -5,7 +5,7 @@ use cosmwasm_std::{
 
 use crate::state::{read_bet, read_config, read_round, read_state, Bet, Config, Round};
 use scrt_prediction::{
-    oracle::{PriceData, QueryMsg as OracleQueryMsg},
+    oracle::{PriceInfo, QueryMsg as OracleQueryMsg},
     prediction::{ConfigResponse, State},
 };
 
@@ -53,11 +53,13 @@ pub fn query_bet<S: Storage, A: Api, Q: Querier>(
 pub fn query_price<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     config: Config,
-) -> StdResult<PriceData> {
-    let price_data: PriceData = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+) -> StdResult<PriceInfo> {
+    let price_data: PriceInfo = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: deps.api.human_address(&config.oracle_addr)?,
         callback_code_hash: config.oracle_code_hash,
-        msg: to_binary(&OracleQueryMsg::QueryLatestPrice {})?,
+        msg: to_binary(&OracleQueryMsg::LastestPrice {
+            asset_info: config.bet_asset.to_normal(&deps)?,
+        })?,
     }))?;
 
     Ok(price_data)

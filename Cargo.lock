@@ -44,16 +44,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "band-protocol"
-version = "1.0.0"
-dependencies = [
- "cosmwasm-std",
- "cosmwasm-storage",
- "schemars",
- "serde",
-]
-
-[[package]]
 name = "base64"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -312,7 +302,6 @@ checksum = "ac74c624d6b2d21f425f752262f42188365d7b8ff1aff74c82e45136510a4857"
 name = "price-oracle"
 version = "0.1.0"
 dependencies = [
- "band-protocol",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",

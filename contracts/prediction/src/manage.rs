@@ -100,10 +100,10 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
     }
 
     let price_reference_data = query_price(deps, config.clone())?;
-    if price_reference_data.last_updated < round.start_time {
+    if price_reference_data.last_updated_time < round.start_time {
         return Err(StdError::generic_err("Price not updated"));
     }
-    let close_price = price_reference_data.rate;
+    let close_price = price_reference_data.price;
 
     if !round.is_genesis && round.open_price.is_none() {
         return Err(StdError::generic_err("Round is not opened"));

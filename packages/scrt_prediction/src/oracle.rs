@@ -1,43 +1,45 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{HumanAddr, Uint128};
+use crate::asset::AssetInfo;
+use cosmwasm_std::{Decimal, HumanAddr};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InitMsg {
-    pub band_oracle: HumanAddr,
-    /// Price oracle code hash
-    pub band_oracle_code_hash: String,
-    /// Base symbol for price
-    pub base_symbol: String,
-    /// Quote symbol for price
-    pub quote_symbol: String,
+    pub owner: HumanAddr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum HandleMsg {}
+pub enum HandleMsg {
+    UpdateConfig {
+        owner: Option<HumanAddr>,
+    },
+    RegisterAsset {
+        asset_info: AssetInfo,
+        feeder: HumanAddr,
+    },
+    FeedPrice {
+        prices: Vec<(AssetInfo, Decimal)>,
+    },
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    /// Query current configuration
     Config {},
-    /// Query latest price
-    QueryLatestPrice {},
+    Feeder { asset_info: AssetInfo },
+    LastestPrice { asset_info: AssetInfo },
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub band_oracle: HumanAddr,
-    pub band_oracle_code_hash: String,
-    pub base_symbol: String,
-    pub quote_symbol: String,
+    pub owner: HumanAddr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct PriceData {
-    pub rate: Uint128,
-    pub last_updated: u64,
+pub struct PriceInfo {
+    pub price: Decimal,
+    pub last_updated_time: u64,
 }

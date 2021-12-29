@@ -26,7 +26,6 @@ cosmwasm-storage = { git = "https://github.com/enigmampc/SecretNetwork", rev = "
 cosmwasm-std = { git = "https://github.com/enigmampc/SecretNetwork", rev = "004c6bc" }
 schemars = "0.7"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
-band-protocol = { version = "1.0.0", path = "../../packages/band_protocol" }
 scrt-prediction = { version = "1.0.0", path = "../../packages/scrt_prediction" }
 
 [dev-dependencies]
