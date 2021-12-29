@@ -100,7 +100,7 @@ fn feed_price<S: Storage, A: Api, Q: Querier>(
 ) -> HandleResult {
     let feeder_raw = deps.api.canonical_address(&env.message.sender)?;
 
-    let mut logs = vec![log("action", "update_config")];
+    let mut logs = vec![log("action", "feed_price")];
 
     for price in prices {
         let asset_key = get_asset_key(price.0);
@@ -173,7 +173,9 @@ fn register_asset<S: Storage, A: Api, Q: Querier>(
 
 fn get_asset_key(asset_info: AssetInfo) -> String {
     match asset_info {
-        AssetInfo::NativeToken { denom } => denom,
-        AssetInfo::Token { contract_addr, .. } => contract_addr.to_string(),
+        AssetInfo::NativeToken { denom } => format!("native_token_{}", denom),
+        AssetInfo::Token { contract_addr, .. } => {
+            format!("snip20_token_{}", contract_addr)
+        }
     }
 }
