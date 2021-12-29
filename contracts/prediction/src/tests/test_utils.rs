@@ -1,9 +1,12 @@
 use cosmwasm_std::testing::{mock_env, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{Decimal, Extern, HumanAddr};
 
-use scrt_prediction::{asset::AssetInfo, prediction::InitMsg};
+use scrt_prediction::{
+    asset::AssetInfo,
+    prediction::{HandleMsg, InitMsg},
+};
 
-use crate::contract::init;
+use crate::contract::{handle, init};
 
 pub fn init_prediction(deps: &mut Extern<MockStorage, MockApi, MockQuerier>) {
     let msg = InitMsg {
@@ -22,4 +25,12 @@ pub fn init_prediction(deps: &mut Extern<MockStorage, MockApi, MockQuerier>) {
     let env = mock_env("owner_addr", &[]);
 
     let _res = init(deps, env, msg).unwrap();
+}
+
+pub fn start_genesis_round(deps: &mut Extern<MockStorage, MockApi, MockQuerier>) {
+    let msg = HandleMsg::StartGenesisRound {};
+
+    let env = mock_env("owner_addr", &[]);
+
+    handle(deps, env.clone(), msg).unwrap();
 }

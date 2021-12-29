@@ -9,7 +9,7 @@ use scrt_prediction::{
 use crate::{
     contract::{handle, init, query},
     state::Round,
-    tests::test_utils::init_prediction,
+    tests::test_utils::{init_prediction, start_genesis_round},
 };
 
 #[test]
@@ -300,5 +300,84 @@ fn test_start_genesis_round() {
             is_genesis: false,
         },
         genesis_round
+    );
+}
+
+#[test]
+fn test_start_genesis_round_failed_if_already_started() {
+    let mut deps = mock_dependencies(20, &[]);
+
+    init_prediction(&mut deps);
+
+    start_genesis_round(&mut deps);
+
+    let msg = HandleMsg::StartGenesisRound {};
+
+    let env = mock_env("owner_addr", &[]);
+
+    let res = handle(&mut deps, env.clone(), msg).unwrap_err();
+
+    assert_eq!(StdError::generic_err("Running now"), res);
+}
+
+#[test]
+fn test_pause_failed_if_already_paused() {
+    let mut deps = mock_dependencies(20, &[]);
+
+    init_prediction(&mut deps);
+
+    let msg = HandleMsg::Pause {};
+
+    let env = mock_env("owner_addr", &[]);
+
+    let res = handle(&mut deps, env.clone(), msg).unwrap_err();
+
+    assert_eq!(StdError::generic_err("Paused"), res);
+}
+
+#[test]
+fn test_pause_failed_if_unauthorized() {
+    let mut deps = mock_dependencies(20, &[]);
+
+    init_prediction(&mut deps);
+
+    start_genesis_round(&mut deps);
+
+    let msg = HandleMsg::Pause {};
+
+    let env = mock_env("addr", &[]);
+
+    let res = handle(&mut deps, env, msg);
+    match res {
+        Err(StdError::Unauthorized { .. }) => {}
+        _ => panic!("Must return unauthorized error"),
+    }
+}
+
+#[test]
+fn test_pause() {
+    let mut deps = mock_dependencies(20, &[]);
+
+    init_prediction(&mut deps);
+
+    start_genesis_round(&mut deps);
+
+    let msg = HandleMsg::Pause {};
+
+    let env = mock_env("owner_addr", &[]);
+
+    let res = handle(&mut deps, env.clone(), msg).unwrap();
+
+    assert_eq!(res.log, vec![log("action", "pause"),]);
+
+    let res = query(&deps, QueryMsg::State {}).unwrap();
+    let state: State = from_binary(&res).unwrap();
+    assert_eq!(
+        State {
+            epoch: Uint128(2),
+            total_fee: Uint128::zero(),
+            paused: true,
+        },
+        state
     );
 }
